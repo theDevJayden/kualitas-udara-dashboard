@@ -110,4 +110,4 @@ if df is not None and not df.empty:
         st.info("Collecting data for AI...")
 
 elif df is not None and df.empty:
-    st.warning("No data available from NThingSpeak.")
+    st.warning("No data available from ThingSpeak.")
