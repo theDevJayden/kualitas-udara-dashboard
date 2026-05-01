@@ -14,11 +14,11 @@ URL = f"https://api.thingspeak.com/channels/{CHANNEL_ID}/feeds.json?api_key={REA
 
 st.set_page_config(page_title="Dashboard Kualitas Udara", layout="wide")
 
-# Tambahkan Auto-Refresh di sini (10000 ms = 10 detik)
+# Tambahkan Auto-Refresh di sini (10000 ms = 10 detik)  
 count = st_autorefresh(interval=10000, limit=None, key="fizzbuzzcounter")
 
-st.title("☁️ Dashboard Pemantauan Kualitas Udara & AI")
-st.write(f"Data diperbarui secara otomatis setiap 10 detik. (Refresh ke-{count})")
+st.title("☁️ Live Air Quality AI based Dashboard")
+st.write(f"Data renewed every 10 seconds. (Refresh no-{count})")
 
 # Hapus ttl=10 atau sesuaikan agar tidak bentrok dengan auto-refresh
 @st.cache_data()
@@ -38,14 +38,14 @@ def get_thingspeak_data():
             df = df.rename(columns={
                 'created_at': 'Waktu',
                 'field1': 'MQ-135 (CO2)',
-                'field2': 'MQ-135_2',
+                'field2': 'MQ-135_2 (NO2)',
                 'field3': 'MQ-136 (SO2)',
                 'field4': 'MQ-131 (O3)',
                 'field5': 'MQ-7 (CO)',
-                'field6': 'PM 2.5'
+                'field6': 'Smoke'
             })
             
-            kolom_sensor = ['MQ-135 (CO2)', 'MQ-135_2', 'MQ-136 (SO2)', 'MQ-131 (O3)', 'MQ-7 (CO)', 'PM 2.5']
+            kolom_sensor = ['MQ-135 (CO2)', 'MQ-135_2 (NO2)', 'MQ-136 (SO2)', 'MQ-131 (O3)', 'MQ-7 (CO)', 'Smoke']
             df = df[['Waktu'] + kolom_sensor]
             
             df['Waktu'] = pd.to_datetime(df['Waktu']).dt.tz_convert('Asia/Jakarta')
@@ -58,7 +58,7 @@ def get_thingspeak_data():
         else:
             return None
     except Exception as e:
-        st.error(f"Terjadi kesalahan: {e}")
+        st.error(f"Error occurred: {e}")
         return None
 
 # ==========================================
@@ -70,11 +70,11 @@ st.cache_data.clear()
 df = get_thingspeak_data()
 
 if df is not None and not df.empty:
-    st.success("Terkoneksi dengan ThingSpeak!")
+    st.success("Connected to ThingSpeak!")
     
     latest = df.iloc[-1]
     waktu_terakhir = df.index[-1].strftime('%d %B %Y, %H:%M:%S')
-    st.caption(f"Pembaruan terakhir: {waktu_terakhir}")
+    st.caption(f"Last updated: {waktu_terakhir}")
     
     # --- Metrik ---
     col1, col2, col3 = st.columns(3)
@@ -84,11 +84,11 @@ if df is not None and not df.empty:
     
     col4, col5, col6 = st.columns(3)
     col4.metric("MQ-7 (CO)", f"{latest['MQ-7 (CO)']:.2f} PPM")
-    col5.metric("Sensor PM 2.5", f"{latest['PM 2.5']:.0f} µg/m³")
-    col6.metric("MQ-135 (Cadangan)", f"{latest['MQ-135_2']:.2f} PPM")
+    col5.metric("Smoke", f"{latest['Smoke']:.0f} µg/m³")
+    col6.metric("MQ-135 (NO2)", f"{latest['MQ-135_2 (NO2)']:.2f} PPM")
     
     st.divider()
-    st.markdown("### 📈 Grafik Riwayat Kualitas Udara")
+    st.markdown("### 📈 Air Quality History")
     st.line_chart(df)
     
     # --- AI Anomaly Detection ---
@@ -102,12 +102,12 @@ if df is not None and not df.empty:
         anomalies = ml_df[ml_df['Anomaly'] == -1]
         
         if not anomalies.empty:
-            st.error(f"⚠️ Peringatan: Terdeteksi {len(anomalies)} anomali!")
+            st.error(f"⚠️ Warning: Detected {len(anomalies)} anomalies!")
             st.dataframe(anomalies.drop(columns=['Anomaly']))
         else:
-            st.success("✅ Kualitas udara stabil.")
+            st.success("✅ Air quality is stable.")
     else:
-        st.info("Mengumpulkan data untuk AI...")
+        st.info("Collecting data for AI...")
 
 elif df is not None and df.empty:
-    st.warning("Belum ada data di ThingSpeak.")
+    st.warning("No data available from NThingSpeak.")
