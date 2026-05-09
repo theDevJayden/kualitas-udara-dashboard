@@ -20,6 +20,7 @@ count = st_autorefresh(interval=20000, limit=None, key="fizzbuzzcounter")
 st.title("☁️ Live Air Quality AI based Dashboard")
 st.write(f"Data renewed every 20 seconds. (Refresh no-{count})")
 st.write(f"Visit my [GitHub : theDevJayden](https://github.com/theDevJayden) for more projects!")
+st.write(f"Contributors : [MikaNob](https://github.com/MikaNob), [study-spec](https://github.com/study-spec), [takawahyu](https://github.com/takawahyu), [adhelingga](https://github.com/adhelingga), [prabowows](https://github.com/prabowows)")
 
 # Hapus ttl=10 atau sesuaikan agar tidak bentrok dengan auto-refresh
 @st.cache_data()
