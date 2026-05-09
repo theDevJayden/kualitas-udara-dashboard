@@ -14,11 +14,12 @@ URL = f"https://api.thingspeak.com/channels/{CHANNEL_ID}/feeds.json?api_key={REA
 
 st.set_page_config(page_title="Dashboard Kualitas Udara", layout="wide")
 
-# Tambahkan Auto-Refresh di sini (10000 ms = 10 detik)  
-count = st_autorefresh(interval=10000, limit=None, key="fizzbuzzcounter")
+# Tambahkan Auto-Refresh di sini (20000 ms = 20 detik)  
+count = st_autorefresh(interval=20000, limit=None, key="fizzbuzzcounter")
 
 st.title("☁️ Live Air Quality AI based Dashboard")
-st.write(f"Data renewed every 10 seconds. (Refresh no-{count})")
+st.write(f"Data renewed every 20 seconds. (Refresh no-{count})")
+st.write(f"Visit my [GitHub : theDevJayden](https://github.com/theDevJayden) for more projects!")
 
 # Hapus ttl=10 atau sesuaikan agar tidak bentrok dengan auto-refresh
 @st.cache_data()
@@ -61,6 +62,23 @@ def get_thingspeak_data():
         st.error(f"Error occurred: {e}")
         return None
 
+def get_status_color(value, safe, warning):
+    if value <= safe:
+        return "#00FF00"  # Green
+    elif value <= warning:
+        return "#FFFF00"  # Yellow
+    else:
+        return "#FF0000"  # Red
+
+def styled_metric(label, value, unit, safe, warning):
+    color = get_status_color(value, safe, warning)
+    st.markdown(f"""
+        <div style="background-color: #1e1e1e; padding: 15px; border-radius: 10px; border-left: 5px solid {color}; margin-bottom: 10px;">
+            <p style="margin:0; font-size: 14px; color: #888;">{label}</p>
+            <h2 style="margin:0; color: {color};">{value:.2f} <span style="font-size: 16px;">{unit}</span></h2>
+        </div>
+    """, unsafe_allow_html=True)
+
 # ==========================================
 # LOGIKA UPDATE DATA
 # ==========================================
@@ -77,15 +95,48 @@ if df is not None and not df.empty:
     st.caption(f"Last updated: {waktu_terakhir}")
     
     # --- Metrik ---
-    col1, col2, col3 = st.columns(3)
-    col1.metric("MQ-135 (CO2)", f"{latest['MQ-135 (CO2)']:.2f} PPM")
-    col2.metric("MQ-136 (SO2)", f"{latest['MQ-136 (SO2)']:.2f} PPM")
-    col3.metric("MQ-131 (O3)", f"{latest['MQ-131 (O3)']:.2f} PPM")
+    # ==========================================
+    # 📊 INDIKATOR SAAT INI (WITH THRESHOLDS)
+    # ==========================================
+    st.markdown("### 📊 Current Air Quality Indicators")
     
+    # Define Thresholds: (Safe_Limit, Warning_Limit)
+    # Note: Values above Warning_Limit are considered Danger.
+    thresholds = {
+        "CO2": (400, 1000),    # Outdoor ambient is ~400, Unsafe > 1000
+        "SO2": (0.1, 0.5),     # PPM
+        "O3": (0.05, 0.1),     # PPM
+        "CO": (9.0, 25.0),     # PPM (9 PPM is 8hr limit)
+        "Smoke": (50, 150),    # µg/m³
+        "NO2": (0.05, 0.2)     # PPM
+    }
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        styled_metric("MQ-135 (CO2)", latest['MQ-135 (CO2)'], "PPM", *thresholds["CO2"])
+    with col2:
+        styled_metric("MQ-136 (SO2)", latest['MQ-136 (SO2)'], "PPM", *thresholds["SO2"])
+    with col3:
+        styled_metric("MQ-131 (O3)", latest['MQ-131 (O3)'], "PPM", *thresholds["O3"])
+    
+    st.write("") # Spacer
+
     col4, col5, col6 = st.columns(3)
-    col4.metric("MQ-7 (CO)", f"{latest['MQ-7 (CO)']:.2f} PPM")
-    col5.metric("Smoke", f"{latest['Smoke']:.0f} µg/m³")
-    col6.metric("MQ-135 (NO2)", f"{latest['MQ-135_2 (NO2)']:.2f} PPM")
+    with col4:
+        styled_metric("MQ-7 (CO)", latest['MQ-7 (CO)'], "PPM", *thresholds["CO"])
+    with col5:
+        styled_metric("Smoke", latest['Smoke'], "µg/m³", *thresholds["Smoke"])
+    with col6:
+        styled_metric("MQ-135 (NO2)", latest['MQ-135_2 (NO2)'], "PPM", *thresholds["NO2"])
+
+    # Legend / Explanation
+    st.markdown("""
+        <div style="margin-top: 10px; font-size: 12px; text-align: center;">
+            <span style="color: #00FF00;">● Green = Safe</span> | 
+            <span style="color: #FFFF00;">● Yellow = Warning</span> | 
+            <span style="color: #FF0000;">● Red = Danger/Unsafe</span>
+        </div>
+    """, unsafe_allow_html=True)
     
     st.divider()
     st.markdown("### 📈 Air Quality History")
