@@ -1,2 +1,4 @@
-# kualitas-udara-dashboard
-Untuk memantau kualitas udara, ter integrasi dengan arduino mega, esp32, dan database thinkspeak
+# AQI monitoring Dashboard
+It measures air quality in PPM's, with a warning system to tell if the dose of contaminated air is over the healthy limit. 
+
+You can visit https://kualitas-udara-dashboard-eudtahka6ajlqffz3t5adm.streamlit.app/ to see the live dashboard
